@@ -4,7 +4,7 @@
 
 **Project Title**: Retail Sales Analysis  
 **Level**: Beginner  
-**Database**: `p1_retail_db`
+**Database**: `retailsales`
 
 This project is designed to demonstrate SQL skills and techniques typically used by data analysts to explore, clean, and analyze retail sales data. The project involves setting up a retail sales database, performing exploratory data analysis (EDA), and answering specific business questions through SQL queries. This project is ideal for those who are starting their journey in data analysis and want to build a solid foundation in SQL.
 
@@ -19,19 +19,19 @@ This project is designed to demonstrate SQL skills and techniques typically used
 
 ### 1. Database Setup
 
-- **Database Creation**: The project starts by creating a database named `p1_retail_db`.
-- **Table Creation**: A table named `retail_sales` is created to store the sales data. The table structure includes columns for transaction ID, sale date, sale time, customer ID, gender, age, product category, quantity sold, price per unit, cost of goods sold (COGS), and total sale amount.
+- **Database Creation**: The project starts by creating a database named `retailsales`.
+- **Table Creation**: A table named `retailsales` is created to store the sales data. The table structure includes columns for transaction ID, sale date, sale time, customer ID, gender, age, product category, quantity sold, price per unit, cost of goods sold (COGS), and total sale amount.
 
 ```sql
-CREATE DATABASE p1_retail_db;
+CREATE DATABASE retailsales;
 
-CREATE TABLE retail_sales
+CREATE TABLE retailsales
 (
     transactions_id INT PRIMARY KEY,
     sale_date DATE,	
     sale_time TIME,
     customer_id INT,	
-    gender VARCHAR(10),
+    gender VARCHAR(35) ,
     age INT,
     category VARCHAR(35),
     quantity INT,
@@ -49,17 +49,17 @@ CREATE TABLE retail_sales
 - **Null Value Check**: Check for any null values in the dataset and delete records with missing data.
 
 ```sql
-SELECT COUNT(*) FROM retail_sales;
-SELECT COUNT(DISTINCT customer_id) FROM retail_sales;
-SELECT DISTINCT category FROM retail_sales;
+SELECT COUNT(*) FROM retailsales;
+SELECT COUNT(DISTINCT customer_id) FROM retailsales;
+SELECT DISTINCT category FROM retailsales;
 
-SELECT * FROM retail_sales
+SELECT * FROM retailsales
 WHERE 
     sale_date IS NULL OR sale_time IS NULL OR customer_id IS NULL OR 
     gender IS NULL OR age IS NULL OR category IS NULL OR 
     quantity IS NULL OR price_per_unit IS NULL OR cogs IS NULL;
 
-DELETE FROM retail_sales
+DELETE FROM retailsales
 WHERE 
     sale_date IS NULL OR sale_time IS NULL OR customer_id IS NULL OR 
     gender IS NULL OR age IS NULL OR category IS NULL OR 
@@ -72,119 +72,170 @@ The following SQL queries were developed to answer specific business questions:
 
 1. **Write a SQL query to retrieve all columns for sales made on '2022-11-05**:
 ```sql
-SELECT *
-FROM retail_sales
-WHERE sale_date = '2022-11-05';
+SELECT 
+    *
+FROM
+    retailsales.retailsales
+WHERE
+    sale_date = '2022-11-05';
 ```
 
 2. **Write a SQL query to retrieve all transactions where the category is 'Clothing' and the quantity sold is more than 4 in the month of Nov-2022**:
 ```sql
 SELECT 
-  *
-FROM retail_sales
-WHERE 
-    category = 'Clothing'
-    AND 
-    TO_CHAR(sale_date, 'YYYY-MM') = '2022-11'
-    AND
-    quantity >= 4
+    *
+FROM
+    retailsales.retailsales
+WHERE
+    category = 'clothing' AND quantity >= 4
+        AND YEAR(sale_date) = 2022
+        AND MONTH(sale_date) = 11;
 ```
 
-3. **Write a SQL query to calculate the total sales (total_sale) for each category.**:
+3. **Write SQL querry to calculate the total orders and sales for each category.**:
 ```sql
 SELECT 
     category,
-    SUM(total_sale) as net_sale,
-    COUNT(*) as total_orders
-FROM retail_sales
-GROUP BY 1
+    SUM(total_sale) AS totalsales,
+    COUNT(*) AS total_orders
+FROM
+    retailsales
+GROUP BY category;
 ```
 
-4. **Write a SQL query to find the average age of customers who purchased items from the 'Beauty' category.**:
+4. **Find the average price per unit for each category.**:
 ```sql
-SELECT
-    ROUND(AVG(age), 2) as avg_age
-FROM retail_sales
-WHERE category = 'Beauty'
+SELECT 
+    category, AVG(price_per_unit) AS avg_price
+FROM
+    retailsales
+GROUP BY category;
 ```
 
-5. **Write a SQL query to find all transactions where the total_sale is greater than 1000.**:
-```sql
-SELECT * FROM retail_sales
-WHERE total_sale > 1000
+5. **List the total sales for each gender.**:
+```SELECT 
+    gender, SUM(total_sale) AS totalsales
+FROM
+    retailsales
+GROUP BY gender;
 ```
 
 6. **Write a SQL query to find the total number of transactions (transaction_id) made by each gender in each category.**:
 ```sql
 SELECT 
-    category,
-    gender,
-    COUNT(*) as total_trans
-FROM retail_sales
-GROUP 
-    BY 
-    category,
-    gender
+    category, gender, COUNT(*) AS total_trans
+FROM
+    retailsales
+GROUP BY category , gender
 ORDER BY 1
 ```
 
-7. **Write a SQL query to calculate the average sale for each month. Find out best selling month in each year**:
+7. **Find the maximum, minimum and average age of customers**:
 ```sql
 SELECT 
-       year,
-       month,
-    avg_sale
-FROM 
-(    
-SELECT 
-    EXTRACT(YEAR FROM sale_date) as year,
-    EXTRACT(MONTH FROM sale_date) as month,
-    AVG(total_sale) as avg_sale,
-    RANK() OVER(PARTITION BY EXTRACT(YEAR FROM sale_date) ORDER BY AVG(total_sale) DESC) as rank
-FROM retail_sales
-GROUP BY 1, 2
-) as t1
-WHERE rank = 1
+    MAX(age) AS max_age,
+    MIN(age) AS min_age,
+    AVG(age) AS avg_age
+FROM
+    retailsales;
 ```
 
-8. **Write a SQL query to find the top 5 customers based on the highest total sales **:
+8. **Calculate the profit margin for each transaction **:
 ```sql
 SELECT 
-    customer_id,
-    SUM(total_sale) as total_sales
-FROM retail_sales
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 5
+    transactions_id,
+    ROUND((total_sale - cogs) / total_sale * 100,
+            2) AS profit_margin
+FROM
+    retailsales.retailsales;
 ```
 
-9. **Write a SQL query to find the number of unique customers who purchased items from each category.**:
+9. **Find the average total sales for transcations made by customers aged 30 and above.**:
 ```sql
 SELECT 
-    category,    
-    COUNT(DISTINCT customer_id) as cnt_unique_cs
-FROM retail_sales
+    ROUND(AVG(total_sale), 2) AS avg_sales
+FROM
+    retailsales
+WHERE
+    age >= 30;
+```
+
+10. **Identify the category with the highest average quantity sold per transaction**:
+```sql
+SELECT 
+    category, AVG(quantity) AS avg_quantity
+FROM
+    retailsales
 GROUP BY category
+ORDER BY avg_quantity DESC
+LIMIT 1;
 ```
-
-10. **Write a SQL query to create each shift and number of orders (Example Morning <12, Afternoon Between 12 & 17, Evening >17)**:
+11. **Calculate the Customer Lifetim Value(CLV) by gender**:
 ```sql
-WITH hourly_sale
-AS
-(
-SELECT *,
-    CASE
-        WHEN EXTRACT(HOUR FROM sale_time) < 12 THEN 'Morning'
-        WHEN EXTRACT(HOUR FROM sale_time) BETWEEN 12 AND 17 THEN 'Afternoon'
-        ELSE 'Evening'
-    END as shift
-FROM retail_sales
-)
 SELECT 
-    shift,
-    COUNT(*) as total_orders    
-FROM hourly_sale
-GROUP BY shift
+    gender,
+    ROUND(AVG(total_sale), 2) AS avg_sale_per_customer,
+    COUNT(DISTINCT customer_id) AS num_customers,
+    ROUND(AVG(total_sale), 2) * COUNT(DISTINCT customer_id) AS CLV
+FROM
+    retailsales
+GROUP BY gender;
+```
+12. ** Identify the sales distribution across different age groups**:
+```sql
+SELECT 
+    CASE
+        WHEN age BETWEEN 18 AND 25 THEN '18-25'
+        WHEN age BETWEEN 26 AND 35 THEN '26-35'
+        WHEN age BETWEEN 36 AND 45 THEN '36-45'
+        WHEN age BETWEEN 46 AND 55 THEN '46-55'
+        ELSE '56+'
+    END AS age_group,
+    SUM(total_sale) AS total_sales,
+    COUNT(transactions_id) AS num_transactions,
+    ROUND(AVG(total_sale), 2) AS avg_sales_per_transaction
+FROM
+    retailsales
+GROUP BY age_group
+ORDER BY age_group;
+```
+13. **Identify trends in sales by calculating the Year-Over_Year(YoY) growth for each category**:
+```sql
+SELECT 
+    category,
+    YEAR(sale_date) AS year,
+    SUM(total_sale) AS total_sales,
+lag(sum(total_sale))
+ over 
+ (partition by category order by year(sale_date))as prev_year_sales,
+sum(total_sale)-lag(sum(total_sale)) over (partition by category order by year(sale_date))/
+ lag(sum(total_sale)) over (partition by category order by year(sale_date)) *100 as YoY_growth
+ from retailsales
+ group by category,
+ year(sale_date)
+ order by category,
+ year(sale_date);
+```
+13. **Identify Which categories are often purchased together**:
+```sql
+SELECT 
+    r1.category AS category1,
+    r2.category AS category2,
+    COUNT(*) AS frequency
+FROM 
+    retailsales r1
+JOIN 
+    retailsales r2 
+ON 
+    r1.customer_id = r2.customer_id AND r1.transactions_id <> r2.transactions_id
+WHERE 
+    r1.sale_date = r2.sale_date
+GROUP BY 
+    r1.category, r2.category
+HAVING 
+    frequency > 1
+ORDER BY 
+    frequency DESC;
 ```
 
 ## Findings
@@ -204,24 +255,3 @@ GROUP BY shift
 
 This project serves as a comprehensive introduction to SQL for data analysts, covering database setup, data cleaning, exploratory data analysis, and business-driven SQL queries. The findings from this project can help drive business decisions by understanding sales patterns, customer behavior, and product performance.
 
-## How to Use
-
-1. **Clone the Repository**: Clone this project repository from GitHub.
-2. **Set Up the Database**: Run the SQL scripts provided in the `database_setup.sql` file to create and populate the database.
-3. **Run the Queries**: Use the SQL queries provided in the `analysis_queries.sql` file to perform your analysis.
-4. **Explore and Modify**: Feel free to modify the queries to explore different aspects of the dataset or answer additional business questions.
-
-## Author - Zero Analyst
-
-This project is part of my portfolio, showcasing the SQL skills essential for data analyst roles. If you have any questions, feedback, or would like to collaborate, feel free to get in touch!
-
-### Stay Updated and Join the Community
-
-For more content on SQL, data analysis, and other data-related topics, make sure to follow me on social media and join our community:
-
-- **YouTube**: [Subscribe to my channel for tutorials and insights](https://www.youtube.com/@zero_analyst)
-- **Instagram**: [Follow me for daily tips and updates](https://www.instagram.com/zero_analyst/)
-- **LinkedIn**: [Connect with me professionally](https://www.linkedin.com/in/najirr)
-- **Discord**: [Join our community to learn and grow together](https://discord.gg/36h5f2Z5PK)
-
-Thank you for your support, and I look forward to connecting with you!
